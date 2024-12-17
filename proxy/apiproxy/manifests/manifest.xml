@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Manifest name="manifest">
+    <Policies>
+        <VersionInfo resourceName="getEncrypted" version="SHA-512:819a74ad8e28fd7200c42bca26b39ade54c1340e4e7c31a7d10b8a65ab7f3f9497bc7fc9e09826faa22ff9f9b1bb655c82c6740d1548d1f14cfbde0e1cb33d6b"/>
+        <VersionInfo resourceName="set-payload" version="SHA-512:906c19f795b0727e03c5eb0da4635dbd2863ac97c147fd98bc8ca36c9f8b9c4f49a27aeea75a2b4bc3720fa7cea2da93585919668380229192ef7271e355d716"/>
+    </Policies>
+    <ProxyEndpoints>
+        <VersionInfo resourceName="default" version="SHA-512:e4b4ac7127c107ea1ba49fa8a33201e6643506bc232818cd75e3a375ffefa292a8fa6e82bb6514841d4be3a5561e1768716e0f33c54a4bc96eb7c56add0aeb5c"/>
+    </ProxyEndpoints>
+    <Resources/>
+    <SharedFlows/>
+    <TargetEndpoints/>
+</Manifest>
