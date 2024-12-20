@@ -148,7 +148,10 @@ def process_raw_kvm(kvm_data, org, kek):
     # decrypt
     for scope, scope_data in kvm_json.items():
         for each_scope, each_scope_data in scope_data.items():
-            dekb64 = load_json(each_scope_data.get('__ apigee__kvm__.keystore').get('__ apigee__kvm__.keystore'))[0].get('value','')
+            enc_keystore=each_scope_data.get('__ apigee__kvm__.keystore')
+            if enc_keystore is None:
+                continue
+            dekb64 = load_json(enc_keystore.get('__ apigee__kvm__.keystore'))[0].get('value','')
             for each_kvm, each_kvm_value in each_scope_data.items():
                 if each_kvm != '__ apigee__kvm__.keystore':
                     kvm_encrypted = each_kvm_value.get('__apigee__encrypted', 'false')
