@@ -166,8 +166,9 @@ def process_raw_kvm(kvm_data, org, kek):
                         else:
                             kvm_json_decrypted[scope][each_scope]={}
                             kvm_json_decrypted[scope][each_scope][each_kvm]=dict_kvm_value
-    kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
-    kvm_json_decrypted['org'].pop('')
+    if '' in kvm_json_decrypted['org']:
+        kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
+        kvm_json_decrypted['org'].pop('')
     write_json('kvms_decrypted.json', kvm_json_decrypted)
 
 # Example usage:
