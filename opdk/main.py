@@ -21,10 +21,19 @@ def write_json(file, data):
 
 def write_file(file_path, data):
     try:
-        with open(file_path, "w") as f:
+        with open(file_path, "wb") as f:
             f.write(data)
     except Exception as e:
         print(f"Couldn't read file {file_path}. ERROR-INFO- {e}")
+
+def read_file(file_path):
+    try:
+        with open(file_path, "r") as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        print(f"Couldn't read file {file_path}. ERROR-INFO- {e}")
+        sys.exit(1)
 
 def run_command(command):
     try:
@@ -180,6 +189,15 @@ if __name__ == "__main__":
     parser.add_argument('--org', type=str, help="Apigee org name")
     parser.add_argument('--cass_ip', type=str, help="Apigee cassandra ip")
     parser.add_argument('--kek', type=str, help="Apigee KEK")
+    parser.add_argument('--raw_export', help="Apigee KEK", action='store_true')
+    parser.add_argument('--raw_import', help="Apigee KEK", action='store_true')
     args = parser.parse_args()
     raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
-    process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
+    if args.raw_export:
+        write_file('raw_export.txt',raw_kvm_data)
+        sys.exit(0)
+    if args.raw_import:
+        raw_kvm_data=read_file('raw_export.txt')
+        process_raw_kvm(raw_kvm_data, args.org, args.kek)
+    else:
+        process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
