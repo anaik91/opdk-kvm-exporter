@@ -16,7 +16,9 @@
 
 from rest import RestClient
 from requests.utils import quote as urlencode
-
+from base_logger import logger
+from time import sleep
+import os
 
 class ApigeeClassic():
     def __init__(self, baseurl, org, token, auth_type, ssl_verify):
@@ -160,3 +162,78 @@ class ApigeeClassic():
         url = f"{self.baseurl}/servers?pod={pod}"
         view_pod_response = self.client.get(url)
         return view_pod_response
+    
+    def get_api(self, api_type, api_name):
+        url = f"{self.baseurl}/organizations/{self.org}/{api_type}/{api_name}"
+        data = self.client.get(url)
+        return data
+    
+    def create_api(self, api_name, proxy_bundle_path):
+        url = f"{self.baseurl}/organizations/{self.org}/apis?action=import&name={api_name}&validate=true"
+        logger.info(url)
+        proxy_bundle_name = os.path.basename(proxy_bundle_path)
+        # params = {
+        #     'name': api_name,
+        #     'action': 'import',
+        #     # 'validate': True
+        # }
+        files = [
+            ('file', (proxy_bundle_name, open(proxy_bundle_path, 'rb'), 'application/zip'))
+        ]
+
+        api_object = self.client.file_post(url, {}, {}, files)
+        return api_object
+    
+    def deploy_api(self, env_name, api_type, api_name, revision):
+        url= f"{self.baseurl}/organizations/{self.org}/environments/{env_name}/{api_type}/{api_name}/revisions/{revision}/deployments?override=true"
+        data = self.client.post(url)
+        return data
+    
+    def get_api_revisions_deployment(self,env_name,api_type, api_name, revision):
+        url = f"{self.baseurl}/organizations/{self.org}/environments/{env_name}/{api_type}/{api_name}/revisions/{revision}/deployments"
+        data = self.client.get(url)
+        return data
+
+    def deploy_api_bundle(self, env_name, api_type, api_name, proxy_bundle_path, api_force_redeploy=False):  # noqa
+        api_deployment_retry = 60
+        api_deployment_sleep = 5
+        api_deployment_retry_count = 0
+        api_exists = False
+        get_api_status = self.get_api(api_type, api_name)
+        if get_api_status.get('metaData'):
+            api_exists = True
+            api_rev = get_api_status.get('revision', ['1'])[-1]
+            logger.warning(f"Proxy with name {api_name} with revision {api_rev} already exists in Apigee Org {self.org}")  # noqa
+            if api_force_redeploy:
+                api_exists = False
+        if not api_exists:
+            api_created = self.create_api(api_name, proxy_bundle_path)
+            if api_created.get('name'):
+                logger.info(f"Proxy has been imported with name {api_name} in Apigee Org {self.org}")  # noqa
+                api_exists = True
+                api_rev = api_created.get('revision')
+            else:
+                logger.error(f"ERROR : Proxy {api_name} import failed !!! ")
+                return False
+        if api_exists:
+            if not self.get_api_revisions_deployment(
+                        env_name, api_type, api_name, api_rev
+                    ).get('code','') == 'distribution.RevisionNotDeployed':
+                logger.info(f"Proxy {api_name} already active in to {env_name} in Apigee Org {self.org} !")  # noqa
+                return True
+            else:
+                if self.deploy_api(env_name, api_type, api_name, api_rev):
+                    logger.info(f"Deploying proxy with name {api_name}  to {env_name} in Apigee Org {self.org}")  # noqa
+                    while api_deployment_retry_count < api_deployment_retry:
+                        if not self.get_api_revisions_deployment(
+                            env_name, api_type, api_name, api_rev
+                        ).get('code','') == 'distribution.RevisionNotDeployed':
+                            logger.info(f"Proxy {api_name} active in runtime after {api_deployment_retry_count*api_deployment_sleep} seconds ")  # noqa
+                            return True
+                        else:
+                            logger.debug(f"Checking API deployment status in {api_deployment_sleep} seconds")  # noqa
+                            sleep(api_deployment_sleep)
+                            api_deployment_retry_count += 1
+                else:
+                    logger.error(f"ERROR : Proxy deployment  to {env_name} in Apigee Org {self.org} Failed !!")  # noqa
+                    return False

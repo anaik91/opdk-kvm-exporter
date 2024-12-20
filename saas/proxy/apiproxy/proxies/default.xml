@@ -5,7 +5,7 @@
     <PreFlow name="PreFlow">
         <Request>
             <Step>
-                <Name>getEncrypted</Name>
+                <Name>get-encrypted</Name>
             </Step>
         </Request>
         <Response>

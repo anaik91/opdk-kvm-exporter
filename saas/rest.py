@@ -74,7 +74,7 @@ class RestClient(object):
 
     def file_post(self, url, params=None, data=None, files=None):
         headers = self.base_headers.copy()
-        headers['Content-Type'] = 'application/octet-stream'
+        # headers['Content-Type'] = 'application/octet-stream'
         response = self.session.post(
             url, data=data, files=files, headers=headers, params=params)
         logger.debug(f"Response: {response.content}")
@@ -150,6 +150,8 @@ class JsonResponse(Response):
             return self._content.get('errorCode')
         elif 'error' in self._content:
             return self._content.get('error')
+        elif 'code' in self._content:
+            return self._content.get('message')
         else:
             return UNKNOWN_ERROR
 

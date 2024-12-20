@@ -7,7 +7,7 @@
     <Description></Description>
     <DisplayName>kvmaccess</DisplayName>
     <Policies>
-        <Policy>getEncrypted</Policy>
+        <Policy>get-encrypted</Policy>
         <Policy>set-payload</Policy>
     </Policies>
     <ProxyEndpoints>

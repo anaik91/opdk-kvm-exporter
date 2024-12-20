@@ -38,7 +38,8 @@ def main():
         export_data = export_artifacts(cfg, resources_list)
         export_data['export'] = True
         write_json(export_data_file, export_data)
-
+    
+    build_decrypting_proxies(cfg, export_data)
 
 if __name__ == '__main__':
     main()

@@ -27,7 +27,7 @@ import configparser
 import concurrent.futures
 from time import sleep
 from base_logger import logger, EXEC_INFO
-
+import shutil
 
 def parse_config(config_file):
     config = configparser.ConfigParser()
@@ -138,7 +138,7 @@ def read_file(file_path):
 
 def write_file(file_path, data):
     try:
-        with open(file_path, "wb") as f:
+        with open(file_path, "w") as f:
             f.write(data)
     except Exception as e:
         logger.error(f"Couldn't read file {file_path}. ERROR-INFO- {e}")
@@ -777,46 +777,18 @@ def filter_objects(obj_data, obj_type, targets):
 
 def zipdir(path, ziph):
     # ziph is zipfile handle
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for file in files:
-            ziph.write(os.path.join(root, file),
-                       os.path.relpath(os.path.join(root, file),
-                                       os.path.join(path, '..')))
+            ziph.write(
+                os.path.join(root, file),
+                os.path.relpath(
+                    os.path.join(root, file), os.path.join(path, "..")  # noqa
+                ),
+            )  # noqa
 
 
-def clone_proxies(source_dir, target_dir,
-                  objects, merged_pes, proxy_bundle_directory):
-    try:
-        target_dir = f"{target_dir}/apiproxy"
-        delete_folder(target_dir)
-        copy_folder(source_dir, target_dir)
-        file = get_proxy_entrypoint(target_dir)
-        # root = parse_xml(file)
-        root = parse_proxy_root(target_dir)
-        delete_file(file)
-        root['APIProxy']['@name'] = objects['Name']
-        root['APIProxy']['Policies'] = filter_objects(
-            root['APIProxy']['Policies'], 'Policy', objects['Policies'])
-        root['APIProxy']['TargetEndpoints'] = filter_objects(
-            root['APIProxy']['TargetEndpoints'], 'TargetEndpoint', objects['TargetEndpoints'])  # noqa
-        clean_up_artifacts(f"{target_dir}/policies", objects['Policies'])
-        clean_up_artifacts(f"{target_dir}/targets", objects['TargetEndpoints'])
-        for pe in objects['ProxyEndpoints']:
-            write_xml_from_dict(
-                f"{target_dir}/proxies/{pe}.xml", merged_pes[pe])
-        clean_up_artifacts(f"{target_dir}/proxies", objects['ProxyEndpoints'])
-        root['APIProxy']['ProxyEndpoints'] = {'ProxyEndpoint': (
-            objects['ProxyEndpoints'] if len(objects['ProxyEndpoints']) > 1 else objects['ProxyEndpoints'][0])}  # noqa
-        transformed_file = file.split('/')
-        transformed_file[-1] = f"{objects['Name']}.xml"
-        write_xml_from_dict("/".join(transformed_file), root)
-        delete_folder(f"{target_dir}/manifests")
-
-        with zipfile.ZipFile(f"{proxy_bundle_directory}/{objects['Name']}.zip", 'w', zipfile.ZIP_DEFLATED) as zipf:  # noqa
-            zipdir(target_dir, zipf)
-
-    except Exception as error:
-        logger.error(
-            f"some error occurred in clone proxy function error. ERROR-INFO - {error}")
-    finally:
-        return merged_pes
+def create_proxy_bundle(proxy_bundle_directory, api_name, target_dir):  # noqa
+    with zipfile.ZipFile(
+        f"{proxy_bundle_directory}/{api_name}.zip", "w", zipfile.ZIP_DEFLATED
+    ) as zipf:  # noqa
+        zipdir(target_dir, zipf)
