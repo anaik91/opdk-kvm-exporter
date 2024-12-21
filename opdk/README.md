@@ -3,7 +3,7 @@
 Below is the usage of the script.
 
 ```
-usage: main.py [-h] [--org ORG] [--cass_ip CASS_IP] [--kek KEK]
+usage: main.py [-h] [--org ORG] [--cass_ip CASS_IP] [--kek KEK] [--raw_export] [--raw_import]
 
 Apigee OPDK KVM Exporter
 
@@ -12,6 +12,8 @@ options:
   --org ORG          Apigee org name
   --cass_ip CASS_IP  Apigee cassandra ip
   --kek KEK          Apigee KEK
+  --raw_export       Generate raw kvm data export using cassandra-cli
+  --raw_import       Decrypt kvm data from raw export
 ```
 
 Eg.
