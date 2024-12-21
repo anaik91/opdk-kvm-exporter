@@ -203,8 +203,8 @@ if __name__ == "__main__":
     parser.add_argument('--org', type=str, help="Apigee org name")
     parser.add_argument('--cass_ip', type=str, help="Apigee cassandra ip")
     parser.add_argument('--kek', type=str, help="Apigee KEK")
-    parser.add_argument('--raw_export', help="Apigee KEK", action='store_true')
-    parser.add_argument('--raw_import', help="Apigee KEK", action='store_true')
+    parser.add_argument('--raw_export', help="Generate raw kvm data export using cassandra-cli", action='store_true')
+    parser.add_argument('--raw_import', help="Decrypt kvm data from raw export", action='store_true')
     args = parser.parse_args()
     raw_kvm_data = ''
     if args.raw_export:
