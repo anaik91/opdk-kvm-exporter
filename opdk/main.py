@@ -7,7 +7,12 @@ def print_json(data):
     print(json.dumps(data, indent=2))
 
 def load_json(data):
-    return json.loads(data)
+    parsed_data = {}
+    try:
+        parsed_data = json.loads(data)
+    except json.decoder.JSONDecodeError:
+        return parsed_data, False
+    return parsed_data, True
 
 def write_json(file, data):
     try:
@@ -21,10 +26,19 @@ def write_json(file, data):
 
 def write_file(file_path, data):
     try:
-        with open(file_path, "w") as f:
+        with open(file_path, "wb") as f:
             f.write(data)
     except Exception as e:
         print(f"Couldn't read file {file_path}. ERROR-INFO- {e}")
+
+def read_file(file_path):
+    try:
+        with open(file_path, "r") as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        print(f"Couldn't read file {file_path}. ERROR-INFO- {e}")
+        sys.exit(1)
 
 def run_command(command):
     try:
@@ -97,7 +111,9 @@ def decrypt_kvm_value(kek, dekb64, data):
 
 def get_kvm_data(kvm_data):
     kvm_name = kvm_data.split(",")[0]
-    kvm_value = load_json(kvm_data.split("value=")[1].split(', timestamp=')[0])
+    kvm_value, valid_json = load_json(kvm_data.split("value=")[1].split(', timestamp=')[0])
+    if not valid_json:
+        kvm_value = {'status': 'JSON decode of kvm entry value failed', kvm_name : kvm_data}
     return kvm_name, kvm_value
 
 def key_exists_ignore_case(json_data, key):
@@ -111,7 +127,8 @@ def key_exists_ignore_case(json_data, key):
 def get_decrypted_kvm_data(kvm_key, kvm_data, kek, dekb64):
     kvm_value = []
     kvm_data = key_exists_ignore_case(kvm_data, kvm_key)
-    for each_value in load_json(kvm_data):
+    kvm_data_dict, valid_json = load_json(kvm_data)
+    for each_value in kvm_data_dict:
         kvm_value.append({
             'name': each_value.get('name'),
             'value': decrypt_kvm_value(kek, dekb64, each_value.get('value'))
@@ -151,7 +168,8 @@ def process_raw_kvm(kvm_data, org, kek):
             enc_keystore=each_scope_data.get('__ apigee__kvm__.keystore')
             if enc_keystore is None:
                 continue
-            dekb64 = load_json(enc_keystore.get('__ apigee__kvm__.keystore'))[0].get('value','')
+            enc_keystore_child, _ = load_json(enc_keystore.get('__ apigee__kvm__.keystore'))
+            dekb64 = enc_keystore_child[0].get('value','')
             for each_kvm, each_kvm_value in each_scope_data.items():
                 if each_kvm != '__ apigee__kvm__.keystore':
                     kvm_encrypted = each_kvm_value.get('__apigee__encrypted', 'false')
@@ -163,7 +181,12 @@ def process_raw_kvm(kvm_data, org, kek):
                             kvm_json_decrypted[scope][each_scope]={}
                             kvm_json_decrypted[scope][each_scope][each_kvm]=dec_kvm_value
                     else:
-                        dict_kvm_value= load_json(each_kvm_value.get(each_kvm)) if each_kvm_value.get(each_kvm) is not None else {}
+                        if each_kvm_value.get(each_kvm):
+                            dict_kvm_value, valid_json = load_json(each_kvm_value.get(each_kvm))
+                            if not valid_json:
+                                dict_kvm_value = {'value' : each_kvm_value}
+                        else:
+                            dict_kvm_value = {}
                         if each_scope in kvm_json_decrypted[scope]:
                             kvm_json_decrypted[scope][each_scope][each_kvm]=dict_kvm_value
                         else:
@@ -180,6 +203,17 @@ if __name__ == "__main__":
     parser.add_argument('--org', type=str, help="Apigee org name")
     parser.add_argument('--cass_ip', type=str, help="Apigee cassandra ip")
     parser.add_argument('--kek', type=str, help="Apigee KEK")
+    parser.add_argument('--raw_export', help="Apigee KEK", action='store_true')
+    parser.add_argument('--raw_import', help="Apigee KEK", action='store_true')
     args = parser.parse_args()
-    raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
-    process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
+    raw_kvm_data = ''
+    if args.raw_export:
+        raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
+        write_file('raw_export.txt',raw_kvm_data)
+        sys.exit(0)
+    if args.raw_import:
+        raw_kvm_data=read_file('raw_export.txt')
+        process_raw_kvm(raw_kvm_data, args.org, args.kek)
+    else:
+        raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
+        process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
