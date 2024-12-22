@@ -14,6 +14,7 @@ options:
   --kek KEK          Apigee KEK
   --raw_export       Generate raw kvm data export using cassandra-cli
   --raw_import       Decrypt kvm data from raw export
+  --apigeecli_export  Flag to export kvm data into apigeecli format
 ```
 
 Eg.
