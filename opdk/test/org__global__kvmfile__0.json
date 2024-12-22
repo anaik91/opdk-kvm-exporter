@@ -1,0 +1,13 @@
+{
+  "keyValueEntries": [
+    {
+      "name": "global_key1",
+      "value": "global_value2"
+    },
+    {
+      "name": "global_key",
+      "value": "global_value"
+    }
+  ],
+  "nextPageToken": ""
+}

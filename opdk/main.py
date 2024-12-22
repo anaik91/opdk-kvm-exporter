@@ -2,6 +2,13 @@ import argparse
 import subprocess
 import json
 import sys
+import os
+
+def create_dir(dir):
+    try:
+        os.makedirs(dir)
+    except FileExistsError:
+        print(f"Directory \"{dir}\" already exists")
 
 def print_json(data):
     print(json.dumps(data, indent=2))
@@ -135,6 +142,37 @@ def get_decrypted_kvm_data(kvm_key, kvm_data, kek, dekb64):
         })
     return kvm_value
 
+def apigee_cli_export(kvm_data,export_dir='apigeecli_export'):
+    create_dir(export_dir)
+    kvm_create_script=['#!/bin/bash','TOKEN=${APIGEE_TOKEN}', 'ORG=${APIGEE_ORG}']
+    apigeecli_base=f'apigeecli kvms create -o $ORG -t $TOKEN'
+    for scope, scope_data in kvm_data.items():
+        for each_scope, each_scope_data in scope_data.items():
+            for each_kvm, each_kvm_value in each_scope_data.items():
+                if isinstance(each_kvm_value, list):
+                    kvm_entries = {'keyValueEntries': each_kvm_value }
+                else:
+                    kvm_entries = {'keyValueEntries': [] }
+                if scope == 'org':
+                    kvm_file = f'org__{each_kvm}__kvmfile__0.json'
+                    write_json(f'{export_dir}/{kvm_file}', kvm_entries)
+                    kvm_create_script.append(f'{apigeecli_base} -n {each_kvm}')
+                elif scope == 'env':
+                    kvm_file = f'env___{each_scope}___{each_kvm}__kvmfile__0.json'
+                    write_json(f'{export_dir}/{kvm_file}', kvm_entries)
+                    kvm_create_script.append(f'{apigeecli_base} -e {each_scope} -n {each_kvm}')
+                elif scope == 'apis':
+                    kvm_file = f'proxy__{each_scope}__{each_kvm}__kvmfile__0.json'
+                    write_json(f'{export_dir}/{kvm_file}', kvm_entries)
+                    kvm_create_script.append(f'{apigeecli_base} -p {each_scope} -n {each_kvm}')
+                elif scope == 'rev':
+                    kvm_file = f'org__{each_kvm}__kvmfile__0.json'
+                    write_json(f'{export_dir}/{kvm_file}', kvm_entries)
+                    kvm_create_script.append(f'{apigeecli_base} -p {each_scope} -n {each_kvm}')
+                else:
+                    print('Unknown Scope')
+    write_file(f'{export_dir}/kvm_create_script.sh','\n'.join(kvm_create_script).encode('utf-8'))
+
 def process_raw_kvm(kvm_data, org, kek):
     kvms = kvm_data.splitlines()
     filtered_kvms = [ line for line in kvms if line.startswith('=>') ]
@@ -196,6 +234,7 @@ def process_raw_kvm(kvm_data, org, kek):
         kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
         kvm_json_decrypted['org'].pop('')
     write_json('kvms_decrypted.json', kvm_json_decrypted)
+    return kvm_json_decrypted
 
 # Example usage:
 if __name__ == "__main__":
@@ -205,15 +244,19 @@ if __name__ == "__main__":
     parser.add_argument('--kek', type=str, help="Apigee KEK")
     parser.add_argument('--raw_export', help="Generate raw kvm data export using cassandra-cli", action='store_true')
     parser.add_argument('--raw_import', help="Decrypt kvm data from raw export", action='store_true')
+    parser.add_argument('--apigeecli_export', help="Flag to export kvm data into apigeecli format", action='store_true')
     args = parser.parse_args()
     raw_kvm_data = ''
     if args.raw_export:
         raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
         write_file('raw_export.txt',raw_kvm_data)
         sys.exit(0)
+    kvm_json_decrypted = {}
     if args.raw_import:
         raw_kvm_data=read_file('raw_export.txt')
-        process_raw_kvm(raw_kvm_data, args.org, args.kek)
+        kvm_json_decrypted = process_raw_kvm(raw_kvm_data, args.org, args.kek)
     else:
         raw_kvm_data = export_raw_kvm_data(args.org, args.cass_ip)
-        process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
+        kvm_json_decrypted=process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
+    if args.apigeecli_export:
+        apigee_cli_export(kvm_json_decrypted)
