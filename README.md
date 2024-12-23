@@ -3,7 +3,9 @@ This repository provides scripts and utilities for exporting and decrypting Apig
 
 # Steps
 
-## Fetch Cassandra vault location  & storepass
+## Apigee Edge OPDK
+
+### Fetch Cassandra vault location  & storepass
 
 Run the below command on the OPDK management server.
 
@@ -12,7 +14,7 @@ export STOREPASS=$(awk -F= '/^vault.passphrase/{FS="=";print($2)}' /opt/apigee/e
 export VAULT=$(awk -F= '/^vault.filepath/{FS="=";print($2)}' /opt/apigee/edge-management-server/conf/credentials.properties)
 ```
 
-# Fetch KEK using the Java Code
+### Fetch KEK using the Java Code
 
 Compile the Java Code.  `opdk/JKSExtractSKE.java`
 
@@ -32,7 +34,7 @@ java JKSExtractSKE /opt/apigee/edge-gateway/vault/com.apigee.datastore.util.data
 14dadc9f2e3e0d3cc774f07f5a0357f1
 ```
 
-# Run the Script
+### Run the Script
 
 ```
 python3 main.py --org <apigee_org_name> --cass_ip <cassandra_ip> --kek <kek>
@@ -43,3 +45,9 @@ Eg.
 ```
 python3 main.py --org validate --cass_ip 10.0.0.4 --kek 14dadc9f2e3e0d3cc774f07f5a0357f1
 ```
+
+Refer the [readme](./opdk/README.md) for all script options and actions
+
+## Apigee Edge SAAS
+
+TBD
