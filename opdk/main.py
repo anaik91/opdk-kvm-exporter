@@ -142,10 +142,9 @@ def get_decrypted_kvm_data(kvm_key, kvm_data, kek, dekb64):
         })
     return kvm_value
 
-def apigee_cli_export(kvm_data,export_dir='apigeecli_export'):
+def apigee_cli_export(kvm_data, export_dir='apigeecli_export'):
     create_dir(export_dir)
-    kvm_create_script=['#!/bin/bash','TOKEN=${APIGEE_TOKEN}', 'ORG=${APIGEE_ORG}']
-    apigeecli_base=f'apigeecli kvms create -o $ORG -t $TOKEN'
+    delimiter='__'
     for scope, scope_data in kvm_data.items():
         for each_scope, each_scope_data in scope_data.items():
             for each_kvm, each_kvm_value in each_scope_data.items():
@@ -154,24 +153,64 @@ def apigee_cli_export(kvm_data,export_dir='apigeecli_export'):
                 else:
                     kvm_entries = {'keyValueEntries': [] }
                 if scope == 'org':
-                    kvm_file = f'org__{each_kvm}__kvmfile__0.json'
+                    kvm_file = f'org{delimiter}{each_kvm}{delimiter}kvmfile__0.json'
                     write_json(f'{export_dir}/{kvm_file}', kvm_entries)
-                    kvm_create_script.append(f'{apigeecli_base} -n {each_kvm}')
                 elif scope == 'env':
-                    kvm_file = f'env___{each_scope}___{each_kvm}__kvmfile__0.json'
+                    kvm_file = f'env{delimiter}{each_scope}{delimiter}{each_kvm}{delimiter}kvmfile__0.json'
                     write_json(f'{export_dir}/{kvm_file}', kvm_entries)
-                    kvm_create_script.append(f'{apigeecli_base} -e {each_scope} -n {each_kvm}')
                 elif scope == 'apis':
-                    kvm_file = f'proxy__{each_scope}__{each_kvm}__kvmfile__0.json'
+                    kvm_file = f'proxy{delimiter}{each_scope}{delimiter}{each_kvm}{delimiter}kvmfile__0.json'
                     write_json(f'{export_dir}/{kvm_file}', kvm_entries)
-                    kvm_create_script.append(f'{apigeecli_base} -p {each_scope} -n {each_kvm}')
                 elif scope == 'rev':
-                    kvm_file = f'org__{each_kvm}__kvmfile__0.json'
+                    kvm_file = f'org{delimiter}{each_kvm}{delimiter}kvmfile__0.json'
                     write_json(f'{export_dir}/{kvm_file}', kvm_entries)
-                    kvm_create_script.append(f'{apigeecli_base} -p {each_scope} -n {each_kvm}')
                 else:
                     print('Unknown Scope')
-    write_file(f'{export_dir}/kvm_create_script.sh','\n'.join(kvm_create_script).encode('utf-8'))
+
+def mvn_cli_export(kvm_data, expand, export_dir='mvncli_export'):
+    edge_dir = f'{export_dir}/edge'
+    create_dir(edge_dir)
+    mvn_json = {
+        'version': '1.0',
+        'envConfig': {},
+        'orgConfig' : {
+            'kvms': []
+        },
+        'apiConfig' :{
+            'kvms': []
+        },
+    }
+    for scope, scope_data in kvm_data.items():
+        for each_scope, each_scope_data in scope_data.items():
+            for each_kvm, each_kvm_value in each_scope_data.items():
+                if isinstance(each_kvm_value, list):
+                    kvm_entries = {'entry': each_kvm_value, 'name': each_kvm }
+                else:
+                    kvm_entries = {'entry': [], 'name': each_kvm }
+                if scope == 'org':
+                    mvn_json['orgConfig']['kvms'].append(kvm_entries)
+                elif scope == 'env':
+                    if each_scope in mvn_json['envConfig']:
+                        mvn_json['envConfig'][each_scope]['kvms'].append(kvm_entries)
+                    else:
+                        mvn_json['envConfig'][each_scope] = { 'kvms': []}
+                        mvn_json['envConfig'][each_scope]['kvms'].append(kvm_entries)
+                elif scope == 'apis':
+                    mvn_json['apiConfig']['kvms'].append(kvm_entries)
+                elif scope == 'rev':
+                    mvn_json['apiConfig']['kvms'].append(kvm_entries)
+                else:
+                    print('Unknown Scope')
+    if expand:
+        create_dir(f'{edge_dir}/org')
+        create_dir(f'{edge_dir}/api')
+        write_json(f'{edge_dir}/org/kvms.json', mvn_json.get('orgConfig').get('kvms'))
+        write_json(f'{edge_dir}/api/kvms.json', mvn_json.get('apiConfig').get('kvms'))
+        for env in mvn_json.get('envConfig'):
+            create_dir(f'{edge_dir}/env/{env}')
+            write_json(f'{edge_dir}/env/{env}/kvms.json', mvn_json.get('envConfig').get(env).get('kvms'))
+    else:
+        write_json(f'{edge_dir}/edge.json', mvn_json)
 
 def process_raw_kvm(kvm_data, org, kek):
     kvms = kvm_data.splitlines()
@@ -190,7 +229,7 @@ def process_raw_kvm(kvm_data, org, kek):
         if kvm_scope_name in kvm_json[kvm_scope]:
             kvm_json[kvm_scope][kvm_scope_name][kvm_name]=kvm_value
         else:
-            kvm_json[kvm_scope][kvm_scope_name]={}
+            kvm_json[kvm_scope][kvm_scope_name] = {}
             kvm_json[kvm_scope][kvm_scope_name][kvm_name]=kvm_value
         # print(f"kvm_name: {kvm_name} | kvm_scope: {kvm_scope} | kvm_scope_name: {kvm_scope_name}")
     write_json('kvms.json', kvm_json)
@@ -216,7 +255,7 @@ def process_raw_kvm(kvm_data, org, kek):
                         if each_scope in kvm_json_decrypted[scope]:
                             kvm_json_decrypted[scope][each_scope][each_kvm]=dec_kvm_value
                         else:
-                            kvm_json_decrypted[scope][each_scope]={}
+                            kvm_json_decrypted[scope][each_scope] = {}
                             kvm_json_decrypted[scope][each_scope][each_kvm]=dec_kvm_value
                     else:
                         if each_kvm_value.get(each_kvm):
@@ -226,10 +265,10 @@ def process_raw_kvm(kvm_data, org, kek):
                         else:
                             dict_kvm_value = {}
                         if each_scope in kvm_json_decrypted[scope]:
-                            kvm_json_decrypted[scope][each_scope][each_kvm]=dict_kvm_value
+                            kvm_json_decrypted[scope][each_scope][each_kvm] = dict_kvm_value
                         else:
-                            kvm_json_decrypted[scope][each_scope]={}
-                            kvm_json_decrypted[scope][each_scope][each_kvm]=dict_kvm_value
+                            kvm_json_decrypted[scope][each_scope] = {}
+                            kvm_json_decrypted[scope][each_scope][each_kvm] = dict_kvm_value
     if '' in kvm_json_decrypted['org']:
         kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
         kvm_json_decrypted['org'].pop('')
@@ -245,6 +284,8 @@ if __name__ == "__main__":
     parser.add_argument('--raw_export', help="Generate raw kvm data export using cassandra-cli", action='store_true')
     parser.add_argument('--raw_import', help="Decrypt kvm data from raw export", action='store_true')
     parser.add_argument('--apigeecli_export', help="Flag to export kvm data into apigeecli format", action='store_true')
+    parser.add_argument('--mvncli_export', help="Flag to export kvm data into apigeecli format", action='store_true')
+    parser.add_argument('--mvncli_export_expand', help="Flag to export kvm data into apigeecli format", action='store_true')
     args = parser.parse_args()
     raw_kvm_data = ''
     if args.raw_export:
@@ -260,3 +301,8 @@ if __name__ == "__main__":
         kvm_json_decrypted=process_raw_kvm(raw_kvm_data.decode('utf-8'), args.org, args.kek)
     if args.apigeecli_export:
         apigee_cli_export(kvm_json_decrypted)
+    if args.mvncli_export:
+        if args.mvncli_export_expand:
+            mvn_cli_export(kvm_json_decrypted, True)
+        else:
+            mvn_cli_export(kvm_json_decrypted, False)
