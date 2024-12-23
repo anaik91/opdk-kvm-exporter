@@ -27,7 +27,7 @@ options:
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \ 
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1
 ```
 
@@ -37,7 +37,7 @@ python3 main.py \
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1
 ```
 
@@ -46,7 +46,7 @@ python3 main.py \
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1
 ```
 
@@ -55,7 +55,7 @@ python3 main.py \
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1 \
   --apigeecli_export
 ```
@@ -65,7 +65,7 @@ python3 main.py \
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1 \
   --mvncli_export
 ```
@@ -76,7 +76,7 @@ python3 main.py \
 ```
 python3 main.py \
   --org validate \
-  --cass_ip 10.0.0.4 
+  --cass_ip 10.0.0.4 \
   --kek 14dadc9f2e3e0d3cc774f07f5a0357f1 \
   --mvncli_export \
   --mvncli_export_expand
