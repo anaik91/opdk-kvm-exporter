@@ -216,10 +216,10 @@ def process_raw_kvm(kvm_data, org, kek):
     kvms = kvm_data.splitlines()
     filtered_kvms = [ line for line in kvms if line.startswith('=>') ]
     kvm_json = {
-        'org':{},
-        'env':{},
-        'apis':{},
-        'rev':{}
+        'org': {},
+        'env': {},
+        'apis': {},
+        'rev': {}
     }
     # populate
     for each_line in filtered_kvms:
@@ -234,10 +234,10 @@ def process_raw_kvm(kvm_data, org, kek):
         # print(f"kvm_name: {kvm_name} | kvm_scope: {kvm_scope} | kvm_scope_name: {kvm_scope_name}")
     write_json('kvms.json', kvm_json)
     kvm_json_decrypted = {
-        'org':{},
-        'env':{},
-        'apis':{},
-        'rev':{}
+        'org': {},
+        'env': {},
+        'apis': {},
+        'rev': {}
     }
     # decrypt
     for scope, scope_data in kvm_json.items():
@@ -284,8 +284,8 @@ if __name__ == "__main__":
     parser.add_argument('--raw_export', help="Generate raw kvm data export using cassandra-cli", action='store_true')
     parser.add_argument('--raw_import', help="Decrypt kvm data from raw export", action='store_true')
     parser.add_argument('--apigeecli_export', help="Flag to export kvm data into apigeecli format", action='store_true')
-    parser.add_argument('--mvncli_export', help="Flag to export kvm data into apigeecli format", action='store_true')
-    parser.add_argument('--mvncli_export_expand', help="Flag to export kvm data into apigeecli format", action='store_true')
+    parser.add_argument('--mvncli_export', help="Flag to export kvm data into mvn cli format into a single file", action='store_true')
+    parser.add_argument('--mvncli_export_expand', help="Flag to export kvm data into mvn cli format into a multiple files", action='store_true')
     args = parser.parse_args()
     raw_kvm_data = ''
     if args.raw_export:
