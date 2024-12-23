@@ -205,3 +205,4 @@ target*
 apigeecli_export
 kvms.json
 kvms_decrypted.json
+mvncli_export
