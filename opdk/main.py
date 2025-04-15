@@ -248,27 +248,28 @@ def process_raw_kvm(kvm_data, org, kek):
             enc_keystore_child, _ = load_json(enc_keystore.get('__ apigee__kvm__.keystore'))
             dekb64 = enc_keystore_child[0].get('value','')
             for each_kvm, each_kvm_value in each_scope_data.items():
+                dec_kvm_key = list(each_kvm_value.keys())[0] if len(list(each_kvm_value.keys())) > 0 else each_kvm
                 if each_kvm != '__ apigee__kvm__.keystore':
                     kvm_encrypted = each_kvm_value.get('__apigee__encrypted', 'false')
                     if kvm_encrypted == 'true':
-                        dec_kvm_value = get_decrypted_kvm_data(each_kvm, each_kvm_value, kek, dekb64)
+                        dec_kvm_value = get_decrypted_kvm_data(dec_kvm_key, each_kvm_value, kek, dekb64)
                         if each_scope in kvm_json_decrypted[scope]:
-                            kvm_json_decrypted[scope][each_scope][each_kvm]=dec_kvm_value
+                            kvm_json_decrypted[scope][each_scope][dec_kvm_key]=dec_kvm_value
                         else:
                             kvm_json_decrypted[scope][each_scope] = {}
-                            kvm_json_decrypted[scope][each_scope][each_kvm]=dec_kvm_value
+                            kvm_json_decrypted[scope][each_scope][dec_kvm_key]=dec_kvm_value
                     else:
-                        if each_kvm_value.get(each_kvm):
-                            dict_kvm_value, valid_json = load_json(each_kvm_value.get(each_kvm))
+                        if each_kvm_value.get(dec_kvm_key):
+                            dict_kvm_value, valid_json = load_json(each_kvm_value.get(dec_kvm_key))
                             if not valid_json:
                                 dict_kvm_value = {'value' : each_kvm_value}
                         else:
                             dict_kvm_value = {}
                         if each_scope in kvm_json_decrypted[scope]:
-                            kvm_json_decrypted[scope][each_scope][each_kvm] = dict_kvm_value
+                            kvm_json_decrypted[scope][each_scope][dec_kvm_key] = dict_kvm_value
                         else:
                             kvm_json_decrypted[scope][each_scope] = {}
-                            kvm_json_decrypted[scope][each_scope][each_kvm] = dict_kvm_value
+                            kvm_json_decrypted[scope][each_scope][dec_kvm_key] = dict_kvm_value
     if '' in kvm_json_decrypted['org']:
         kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
         kvm_json_decrypted['org'].pop('')
