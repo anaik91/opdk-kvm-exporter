@@ -2,7 +2,7 @@
 
 Below is the usage of the script. This script has to be run from cassandra server.
 
-```
+```bash
 python3 main.py --help
 usage: main.py [-h] [--org ORG] [--cass_ip CASS_IP] [--kek KEK] [--raw_export] [--raw_import] [--apigeecli_export] [--mvncli_export]
                [--mvncli_export_expand]
@@ -13,7 +13,7 @@ options:
   -h, --help            show this help message and exit
   --org ORG             Apigee org name
   --cass_ip CASS_IP     Apigee cassandra ip
-  --kek KEK             Apigee KEK
+  --kek KEK             Apigee Key Encryption Key
   --raw_export          Generate raw kvm data export using cassandra-cli
   --raw_import          Decrypt kvm data from raw export
   --apigeecli_export    Flag to export kvm data into apigeecli format
@@ -24,7 +24,7 @@ options:
 
 ## Example of decrypt of kvms
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \ 
@@ -34,7 +34,7 @@ python3 main.py \
 
 ## Example of raw export of kvms using cassandra-cli [No kvm decrypt]
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \
@@ -43,7 +43,7 @@ python3 main.py \
 
 ## Example of raw import of export of cassandra-cli to decrypt kvms
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \
@@ -52,7 +52,7 @@ python3 main.py \
 
 ## Example with apigeecli format export
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \
@@ -62,7 +62,7 @@ python3 main.py \
 
 ## Example with maven plugin format export into single file
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \
@@ -73,7 +73,7 @@ python3 main.py \
 
 ## Example with maven plugin format export into multiple files
 
-```
+```bash
 python3 main.py \
   --org validate \
   --cass_ip 10.0.0.4 \
