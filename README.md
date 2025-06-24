@@ -43,9 +43,6 @@ This repository provides scripts and utilities for exporting and decrypting Apig
 
 To run the script for Apigee OPDK refer to the [readme](./opdk/README.md) for all script options and actions
 
-## Apigee Edge SAAS
-
-TBD
 
 ## Disclaimer
 
