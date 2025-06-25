@@ -297,7 +297,7 @@ def process_raw_kvm(kvm_data, org, kek):
                     kvm_gt_10k = True
                     print(f"KVM Name: {each_kvm} || KVM Size : {each_kvm_size} || KVM Scope: {ekc} || KVM Subscope: {eksc}")
     if not kvm_gt_10k:
-        print(f"No Kvms with size < 10KB found")
+        print(f"No Kvms with size > 10KB found")
     return kvm_json_decrypted
 
 # Example usage:
