@@ -212,6 +212,20 @@ def mvn_cli_export(kvm_data, expand, export_dir='mvncli_export'):
     else:
         write_json(f'{edge_dir}/edge.json', mvn_json)
 
+def get_json_size_in_bytes(data):
+  """
+  Calculates the size of a JSON object in bytes.
+
+  Args:
+    data: The JSON object (e.g., a Python dictionary).
+
+  Returns:
+    The size of the JSON object in bytes.
+  """
+  json_string = json.dumps(data)
+  byte_array = json_string.encode('utf-8')
+  return len(byte_array)
+
 def process_raw_kvm(kvm_data, org, kek):
     kvms = kvm_data.splitlines()
     filtered_kvms = [ line for line in kvms if line.startswith('=>') ]
@@ -274,6 +288,16 @@ def process_raw_kvm(kvm_data, org, kek):
         kvm_json_decrypted['org'][org]=kvm_json_decrypted['org']['']
         kvm_json_decrypted['org'].pop('')
     write_json('kvms_decrypted.json', kvm_json_decrypted)
+    kvm_gt_10k = False
+    for ekc in kvm_json_decrypted.keys():
+        for eksc in kvm_json_decrypted.get(ekc):
+            for each_kvm in kvm_json_decrypted.get(ekc).get(eksc):
+                each_kvm_size = get_json_size_in_bytes(kvm_json_decrypted.get(ekc).get(eksc).get(each_kvm))
+                if each_kvm_size > 1000:
+                    kvm_gt_10k = True
+                    print(f"KVM Name: {each_kvm} || KVM Size : {each_kvm_size} || KVM Scope: {ekc} || KVM Subscope: {eksc}")
+    if not kvm_gt_10k:
+        print(f"No Kvms with size < 10KB found")
     return kvm_json_decrypted
 
 # Example usage:
